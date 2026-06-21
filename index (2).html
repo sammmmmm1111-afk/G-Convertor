@@ -1,0 +1,399 @@
+````html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0f0f0f" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="G-Convertor" />
+<meta name="format-detection" content="telephone=no" />
+<title>G-Convertor | Fast Graphic Viewer</title>
+<style>
+:root{
+  --bg:#0f0f0f;
+  --surface:rgba(255,255,255,0.03);
+  --card: rgba(255,255,255,0.02);
+  --accent:#00ff88;
+  --muted:#9aa0a6;
+  --text:#e9fef0;
+  --border: rgba(255,255,255,0.06);
+  --glass: rgba(255,255,255,0.03);
+  --radius:18px;
+  --ad-height:90px;
+  --shadow: 0 28px 80px rgba(0,0,0,0.7);
+  --badge-bg: rgba(0,255,136,0.14);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+body{background:linear-gradient(180deg,#07100a 0%,var(--bg) 60%);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh}
+#app{display:flex;flex-direction:column;min-height:100vh}
+#ad-top,#ad-bottom{min-height:var(--ad-height);flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:var(--surface);color:var(--muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.14em;font-size:.88rem}
+main{flex:1;max-width:1200px;margin:0 auto;padding:28px;display:flex;flex-direction:column;gap:20px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:48px;height:48px;border-radius:10px;display:inline-grid;place-items:center;
+  background:linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,255,136,0.04));
+  border:1px solid rgba(0,255,136,0.12);backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);flex:0 0 48px;
+}
+.logo svg{display:block;width:28px;height:28px}
+.title{font-weight:700;font-size:1.4rem;letter-spacing:-0.01em}
+.subtitle{color:var(--muted);font-size:.92rem}
+.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{
+  display:inline-flex;align-items:center;gap:.5rem;padding:8px 12px;border-radius:999px;
+  background:var(--badge-bg);color:var(--text);font-weight:600;font-size:.92rem;border:1px solid rgba(0,255,136,0.12);
+  box-shadow: 0 6px 18px rgba(0,255,136,0.03) inset;
+}
+#drop-zone{
+  position:relative;border-radius:16px;padding:28px;min-height:240px;
+  border:1px solid var(--border);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  display:flex;align-items:center;justify-content:center;text-align:center;transition:transform .18s ease,box-shadow .18s ease;
+  backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+#drop-zone.glass{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));}
+#drop-zone.active{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 20px 60px rgba(0,255,136,0.04)}
+#drop-zone::before{content:'Drag & drop or';position:absolute;left:22px;top:18px;color:var(--muted);font-size:.88rem}
+#drop-inner{max-width:680px;padding:0 14px}
+#drop-inner p{margin:0;color:var(--muted);font-size:1rem;line-height:1.6}
+.btn{
+  display:inline-flex;align-items:center;gap:.6rem;padding:10px 16px;border-radius:999px;border:1px solid rgba(0,255,136,0.18);background:transparent;color:var(--accent);cursor:pointer;font-weight:600;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.btn:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,255,136,0.06);background:rgba(0,255,136,0.04)}
+#preview-wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--card);min-height:320px}
+#preview-wrap::before{content:'Preview';position:absolute;left:18px;top:16px;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;pointer-events:none}
+canvas{display:block;width:100%;height:auto}
+.info{padding:16px 18px;color:var(--muted);font-size:.95rem;min-height:20px}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,0.72);opacity:0;pointer-events:none;transition:opacity .18s ease}
+.overlay.active{opacity:1;pointer-events:auto}
+.spinner{width:56px;height:56px;border-radius:50%;border:5px solid rgba(255,255,255,0.08);border-top-color:var(--accent);animation:spin 1s linear infinite;box-shadow:0 8px 30px rgba(0,255,136,0.06) inset}
+.overlay-text{color:var(--text);font-weight:600}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(100%);background:rgba(16,16,16,0.96);padding:12px 18px;border-radius:12px;border:1px solid var(--border);color:var(--text);transition:transform .18s ease,opacity .18s ease;opacity:0;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{border-color:#ff4d6d;color:#ffdbe0;background:rgba(30,10,10,0.96)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);opacity:0;pointer-events:none;transition:opacity .18s ease;z-index:70}
+.modal-backdrop.open{opacity:1;pointer-events:auto}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;z-index:71}
+.modal.open{display:flex}
+.modal-panel{width:min(520px,96%);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:18px;padding:22px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.modal-panel h2{margin:0 0 8px;font-size:1.4rem}
+.modal-panel p{margin:0 0 18px;color:var(--muted);line-height:1.6}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.action-primary{background:var(--accent);color:#042214;border:none;padding:12px 16px;border-radius:999px;cursor:pointer;font-weight:700}
+.action-link{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:12px 16px;border-radius:999px;text-decoration:none}
+.logo-small{width:14px;height:14px;border-radius:3px;background:linear-gradient(90deg,var(--accent),rgba(0,255,136,0.6));display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){
+  main{padding:18px}
+  .brand .title{font-size:1.15rem}
+  #drop-zone{padding:18px;min-height:200px}
+}
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite">
+  <div id="ad-top">Ad Space</div>
+  <main>
+    <div class="header">
+      <div class="brand" aria-hidden="false">
+        <div class="logo" title="G-Convertor">
+          <!-- simple svg 'G' glyph -->
+          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <defs><linearGradient id="ggrad" x1="0" x2="1"><stop offset="0" stop-color="#00ff88"/><stop offset="1" stop-color="#00ff88" stop-opacity="0.8"/></linearGradient></defs>
+            <rect x="6" y="6" width="52" height="52" rx="10" fill="url(#ggrad)" opacity="0.12"/>
+            <path d="M40 22h-12a10 10 0 1 0 0 20h12" fill="none" stroke="#00ff88" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M44 32h-4" stroke="#00ff88" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="title">G-Convertor</div>
+          <div class="subtitle">Fast Graphic Viewer</div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="badge" id="view-badge">Free views: 0/5</div>
+        <div id="status-text" style="color:var(--muted)">Ready to preview</div>
+      </div>
+    </div>
+
+    <section id="drop-zone" class="glass" aria-label="File upload zone">
+      <div id="drop-inner">
+        <p>Drop an image or PSD file here. Supports PNG, JPG, GIF, SVG and PSD. Preview instantly in the browser.</p>
+        <div style="margin-top:14px">
+          <button class="btn" id="browse-btn" type="button" aria-haspopup="dialog">Select a file</button>
+        </div>
+      </div>
+    </section>
+
+    <input id="file-input" type="file" accept="image/*,.svg,.psd" aria-hidden="true" style="display:none">
+
+    <section id="preview-wrap" aria-live="polite">
+      <canvas id="preview-canvas" role="img" aria-label="Design preview canvas"></canvas>
+      <div class="overlay" id="loading-overlay" aria-hidden="true">
+        <div class="spinner" role="img" aria-label="Loading"></div>
+        <div class="overlay-text" id="overlay-text">Processing…</div>
+      </div>
+    </section>
+
+    <div class="info" id="preview-info">No preview loaded yet.</div>
+  </main>
+  <div id="ad-bottom">Ad Space</div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal-backdrop" id="modal-backdrop" aria-hidden="true"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-panel" role="document">
+    <h2 id="modal-title">Upgrade Required</h2>
+    <p>You've reached the maximum of 5 free previews. To continue using G-Convertor, please contact support for a license key.</p>
+    <div class="actions">
+      <button class="action-primary" id="modal-close">Close</button>
+      <a class="action-link" id="modal-contact" href="mailto:support@g-convertor.com?subject=License%20Request">Contact Support</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'gcv_free_views';
+  const LIMIT = 5;
+  const PSD_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/psd.js/3.2.0/psd.min.js';
+
+  const el = {
+    body: document.body,
+    dropZone: document.getElementById('drop-zone'),
+    browse: document.getElementById('browse-btn'),
+    input: document.getElementById('file-input'),
+    canvas: document.getElementById('preview-canvas'),
+    overlay: document.getElementById('loading-overlay'),
+    overlayText: document.getElementById('overlay-text'),
+    badge: document.getElementById('view-badge'),
+    statusText: document.getElementById('status-text'),
+    previewInfo: document.getElementById('preview-info'),
+    toast: document.getElementById('toast'),
+    modal: document.getElementById('modal'),
+    modalBackdrop: document.getElementById('modal-backdrop'),
+    modalClose: document.getElementById('modal-close'),
+    modalContact: document.getElementById('modal-contact')
+  };
+
+  const imageExt = new Set(['png','jpg','jpeg','gif','webp','svg']);
+  let freeViews = 0;
+  let busy = false;
+  let locked = false;
+  let psdLoader = null;
+  let activeUrl = null;
+  let ctx = null;
+  let toastTimer = null;
+
+  const safe = (fn, fallback = null) => { try { return fn(); } catch { return fallback; } };
+
+  const readStorage = () => {
+    const raw = safe(() => localStorage.getItem(STORAGE_KEY), null);
+    const n = parseInt(raw,10);
+    return Number.isInteger(n) && n >= 0 ? n : 0;
+  };
+  const writeStorage = (v) => safe(() => localStorage.setItem(STORAGE_KEY, String(v)));
+
+  const updateUI = () => {
+    el.badge.textContent = `Free views: ${freeViews}/${LIMIT}`;
+    if (freeViews >= LIMIT) {
+      el.statusText.textContent = 'Limit reached — uploads blocked';
+      el.statusText.style.color = '#ff6b82';
+      locked = true;
+      el.input.disabled = true;
+      el.dropZone.classList.add('disabled');
+    } else {
+      el.statusText.textContent = 'Ready to preview';
+      el.statusText.style.color = '';
+      locked = false;
+      el.input.disabled = false;
+      el.dropZone.classList.remove('disabled');
+    }
+  };
+
+  const setBusy = (msg) => {
+    busy = true;
+    el.overlayText.textContent = msg;
+    el.overlay.classList.add('active');
+    el.body.classList.add('busy');
+    el.input.disabled = true;
+    el.dropZone.classList.add('disabled');
+  };
+  const clearBusy = () => {
+    busy = false;
+    el.overlay.classList.remove('active');
+    el.body.classList.remove('busy');
+    if (!locked) { el.input.disabled = false; el.dropZone.classList.remove('disabled'); }
+  };
+
+  const showToast = (msg, isError=false) => {
+    el.toast.textContent = msg;
+    el.toast.className = isError ? 'toast show error' : 'toast show';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ el.toast.classList.remove('show'); toastTimer=null; },4200);
+  };
+
+  const openModal = () => {
+    el.modal.classList.add('open');
+    el.modalBackdrop.classList.add('open');
+    el.modalBackdrop.setAttribute('aria-hidden','false');
+    el.modalContact.setAttribute('tabindex','0');
+    locked = true;
+    el.input.disabled = true;
+    el.dropZone.classList.add('disabled');
+  };
+  const closeModal = () => {
+    el.modal.classList.remove('open');
+    el.modalBackdrop.classList.remove('open');
+    el.modalBackdrop.setAttribute('aria-hidden','true');
+  };
+
+  const detectType = (file) => {
+    const name = (file.name||'').toLowerCase();
+    const ext = name.split('.').pop();
+    if (ext === 'psd') return 'psd';
+    if (imageExt.has(ext) || (file.type && file.type.startsWith('image/'))) return 'image';
+    return null;
+  };
+
+  const revokeActive = () => {
+    if (activeUrl) { safe(()=>URL.revokeObjectURL(activeUrl)); activeUrl = null; }
+  };
+
+  const resetCanvas = () => {
+    revokeActive();
+    if (ctx) { try { ctx.clearRect(0,0,el.canvas.width,el.canvas.height); } catch{} ctx=null; }
+    el.canvas.width = el.canvas.height = 0;
+    el.previewInfo.textContent = '';
+  };
+
+  const setCanvasSize = (w,h) => {
+    const ratio = Math.min(Math.max(window.devicePixelRatio||1,1),2);
+    el.canvas.width = Math.round(w*ratio);
+    el.canvas.height = Math.round(h*ratio);
+    el.canvas.style.width = '100%';
+    el.canvas.style.height = 'auto';
+    ctx = el.canvas.getContext('2d');
+    if (ctx) { ctx.setTransform(ratio,0,0,ratio,0,0); ctx.imageSmoothingQuality='high'; ctx.clearRect(0,0,w,h); }
+  };
+
+  const readBuffer = (file) => new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onerror=()=>rej(new Error('Failed to read file')); r.onload=()=>res(r.result); r.readAsArrayBuffer(file);
+  });
+
+  const loadPsdLib = async () => {
+    if (psdLoader) return psdLoader;
+    psdLoader = new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src = PSD_CDN;
+      s.async = true;
+      s.onload = ()=> resolve(window.PSD);
+      s.onerror = ()=> reject(new Error('Failed to load PSD engine'));
+      document.head.appendChild(s);
+    }).catch(e=>{ psdLoader=null; throw e;});
+    return psdLoader;
+  };
+
+  const renderImage = async (file) => {
+    resetCanvas();
+    const url = URL.createObjectURL(file);
+    activeUrl = url;
+    const img = new Image();
+    img.decoding='async';
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('Image corrupted or unsupported')); img.src=url });
+    await new Promise(r=>requestAnimationFrame(r));
+    setCanvasSize(img.naturalWidth || img.width || 800, img.naturalHeight || img.height || 600);
+    if (ctx) ctx.drawImage(img,0,0,img.naturalWidth || img.width, img.naturalHeight || img.height);
+    el.previewInfo.textContent = `${file.name} · ${Math.round(file.size/1024)} KB · IMAGE`;
+    revokeActive();
+  };
+
+  const renderPsd = async (file) => {
+    resetCanvas();
+    setBusy('Loading PSD engine…');
+    const PSD = await loadPsdLib();
+    await new Promise(r=>requestAnimationFrame(r));
+    setBusy('Parsing PSD file…');
+    const buffer = await readBuffer(file);
+    const psd = PSD.fromArrayBuffer(buffer);
+    psd.parse();
+    if (!psd.image || typeof psd.image.toPng !== 'function') throw new Error('PSD content cannot be rendered');
+    const pngData = await psd.image.toPng();
+    const blob = pngData instanceof Blob ? pngData : new Blob([pngData], {type:'image/png'});
+    const url = URL.createObjectURL(blob);
+    activeUrl = url;
+    const img = new Image();
+    img.decoding='async';
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('PSD rasterization failed')); img.src=url });
+    await new Promise(r=>requestAnimationFrame(r));
+    setCanvasSize(img.naturalWidth || img.width || 1200, img.naturalHeight || img.height || 800);
+    if (ctx) ctx.drawImage(img,0,0,img.naturalWidth || img.width, img.naturalHeight || img.height);
+    el.previewInfo.textContent = `${file.name} · ${Math.round(file.size/1024)} KB · PSD`;
+    revokeActive();
+  };
+
+  const processFile = async (file) => {
+    if (!file || busy) return;
+    const kind = detectType(file);
+    if (!kind) { showToast('Unsupported file type', true); return; }
+    if (freeViews >= LIMIT) { openModal(); return; }
+    setBusy('Preparing preview…');
+    try {
+      if (kind === 'image') await renderImage(file);
+      else if (kind === 'psd') await renderPsd(file);
+      freeViews = Math.min(LIMIT, freeViews + 1);
+      writeStorage(freeViews);
+      updateUI();
+      showToast('Preview ready');
+      if (freeViews >= LIMIT) openModal();
+    } catch (err) {
+      showToast(err && err.message ? err.message : 'Unable to load file', true);
+    } finally {
+      clearBusy();
+      // aggressive GC hint: drop big refs
+      await new Promise(r=>setTimeout(r,40));
+    }
+  };
+
+  const handleFiles = (files) => {
+    if (!files || files.length === 0) return;
+    processFile(files[0]);
+  };
+
+  // event wiring
+  el.browse.addEventListener('click', ()=>{ if (locked||busy) return; el.input.click(); });
+  el.input.addEventListener('change', (e)=>{ handleFiles(e.target.files); e.target.value=''; });
+
+  el.dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); if (locked||busy) return; el.dropZone.classList.add('active'); });
+  el.dropZone.addEventListener('dragleave', ()=>el.dropZone.classList.remove('active'));
+  el.dropZone.addEventListener('drop', (e)=>{ e.preventDefault(); el.dropZone.classList.remove('active'); if (locked) { openModal(); return; } if (busy) return; handleFiles(e.dataTransfer.files); });
+
+  window.addEventListener('dragover', e=>e.preventDefault());
+  window.addEventListener('drop', e=>e.preventDefault());
+
+  el.modalBackdrop.addEventListener('click', closeModal);
+  el.modalClose.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && el.modal.classList.contains('open')) closeModal(); });
+
+  // init
+  freeViews = readStorage();
+  if (freeViews >= LIMIT) locked = true;
+  updateUI();
+
+  // defensive unload: revoke on pagehide
+  window.addEventListener('pagehide', ()=>{ try{ revokeActive(); ctx && ctx.clearRect(0,0,el.canvas.width,el.canvas.height); ctx=null; }catch{} });
+
+})();
+</script>
+</body>
+</html>
+````
